@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.maum.my.dao.IEmotionDAO">
+
+    <!-- 1. 감정 클릭 로그 저장 -->
+    <insert id="insertEmotionLog" parameterType="com.maum.my.vo.EmotionLogVO">
+        INSERT INTO member_emotion_logs (mem_id, emotion_id, log_time, memo)
+        VALUES (#{memId}, #{emotionId}, SYSTIMESTAMP, #{memo})
+    </insert>
+
+    <!-- 2. 특정 날짜 로그 조회 (타임라인) -->
+    <select id="getEmotionLogsByDate" resultType="com.maum.my.vo.EmotionLogVO">
+        SELECT 
+            TO_CHAR(l.log_time, 'HH24:MI') AS logTime,
+            e.emotion_name AS emotionName,
+            l.memo
+        FROM member_emotion_logs l
+        JOIN emotions e ON l.emotion_id = e.emotion_id
+        WHERE l.mem_id = #{memId}
+          AND TO_CHAR(l.log_time, 'YYYY-MM-DD') = #{selectedDate}
+        ORDER BY l.log_time ASC
+    </select>
+
+    <!-- 3. 특정 날짜 통계 -->
+    <select id="getDailyStatsByDate" resultType="com.maum.my.vo.EmotionLogVO">
+        SELECT e.emotion_name AS emotionName, COUNT(*) AS emotionCount
+        FROM member_emotion_logs l
+        JOIN emotions e ON l.emotion_id = e.emotion_id
+        WHERE l.mem_id = #{memId}
+          AND TRUNC(l.log_time) = TO_DATE(#{date}, 'YYYY-MM-DD')
+        GROUP BY e.emotion_name
+        ORDER BY e.emotion_name
+    </select>
+
+    <!-- 4. 최근 7일 로그 -->
+    <select id="getWeeklyLogs" resultType="com.maum.my.vo.EmotionLogVO">
+        SELECT 
+            l.log_id AS logId,
+            l.mem_id AS memId,
+            l.emotion_id AS emotionId,
+            l.log_time AS logTime,
+            e.emotion_name AS emotionName,
+            l.memo
+        FROM member_emotion_logs l
+        JOIN emotions e ON l.emotion_id = e.emotion_id
+        WHERE l.mem_id = #{memId}
+          AND l.log_time >= TRUNC(SYSDATE) - 6
+        ORDER BY l.log_time DESC
+    </select>
+
+    <!-- 5. 오늘 통계 -->
+    <select id="getDailyStats" resultType="com.maum.my.vo.EmotionLogVO">
+        SELECT e.emotion_name AS emotionName, COUNT(*) AS emotionCount
+        FROM member_emotion_logs l
+        JOIN emotions e ON l.emotion_id = e.emotion_id
+        WHERE l.mem_id = #{memId}
+          AND TRUNC(l.log_time) = TRUNC(SYSDATE)
+        GROUP BY e.emotion_name
+        ORDER BY e.emotion_name
+    </select>
+
+    <!-- 6. 이번주 통계 -->
+    <select id="getWeeklyStats" resultType="com.maum.my.vo.EmotionLogVO">
+        SELECT e.emotion_name AS emotionName, COUNT(*) AS emotionCount
+        FROM member_emotion_logs l
+        JOIN emotions e ON l.emotion_id = e.emotion_id
+        WHERE l.mem_id = #{memId}
+          AND l.log_time >= TRUNC(SYSDATE, 'IW')
+        GROUP BY e.emotion_name
+        ORDER BY e.emotion_name
+    </select>
+
+    <!-- 7. 이번달 통계 -->
+    <select id="getMonthlyStats" resultType="com.maum.my.vo.EmotionLogVO">
+        SELECT e.emotion_name AS emotionName, COUNT(*) AS emotionCount
+        FROM member_emotion_logs l
+        JOIN emotions e ON l.emotion_id = e.emotion_id
+        WHERE l.mem_id = #{memId}
+          AND l.log_time >= TRUNC(SYSDATE, 'MM')
+        GROUP BY e.emotion_name
+        ORDER BY e.emotion_name
+    </select>
+
+    <!-- 8. 이번달 최다 감정 -->
+    <select id="getTopMonthlyEmotion" resultType="com.maum.my.vo.EmotionLogVO">
+        SELECT * FROM (
+            SELECT e.emotion_name AS emotionName, COUNT(*) AS emotionCount
+            FROM member_emotion_logs l
+            JOIN emotions e ON l.emotion_id = e.emotion_id
+            WHERE l.mem_id = #{memId}
+              AND l.log_time >= TRUNC(SYSDATE, 'MM')
+            GROUP BY e.emotion_name
+            ORDER BY COUNT(*) DESC
+        )
+        WHERE ROWNUM = 1
+    </select>
+
+    <!-- 9. 시간대별 패턴 -->
+    <select id="getTimeBlockStats" resultType="com.maum.my.vo.EmotionLogVO">
+        SELECT 
+            CASE
+                WHEN TO_NUMBER(TO_CHAR(l.log_time,'HH24')) BETWEEN 0 AND 5  THEN '00-06'
+                WHEN TO_NUMBER(TO_CHAR(l.log_time,'HH24')) BETWEEN 6 AND 11 THEN '06-12'
+                WHEN TO_NUMBER(TO_CHAR(l.log_time,'HH24')) BETWEEN 12 AND 17 THEN '12-18'
+                ELSE '18-24'
+            END AS timeBlock,
+            e.emotion_name AS emotionName,
+            COUNT(*) AS emotionCount
+        FROM member_emotion_logs l
+        JOIN emotions e ON l.emotion_id = e.emotion_id
+        WHERE l.mem_id = #{memId}
+          AND TRUNC(l.log_time) = TO_DATE(#{date}, 'YYYY-MM-DD')
+        GROUP BY 
+            CASE
+                WHEN TO_NUMBER(TO_CHAR(l.log_time,'HH24')) BETWEEN 0 AND 5  THEN '00-06'
+                WHEN TO_NUMBER(TO_CHAR(l.log_time,'HH24')) BETWEEN 6 AND 11 THEN '06-12'
+                WHEN TO_NUMBER(TO_CHAR(l.log_time,'HH24')) BETWEEN 12 AND 17 THEN '12-18'
+                ELSE '18-24'
+            END,
+            e.emotion_name
+        ORDER BY timeBlock, e.emotion_name
+    </select>
+
+    <!-- 10. 특정 주 선택 -->
+    <select id="getWeeklyStatsByDate" resultType="com.maum.my.vo.EmotionLogVO">
+        SELECT e.emotion_name AS emotionName, COUNT(*) AS emotionCount
+        FROM member_emotion_logs l
+        JOIN emotions e ON l.emotion_id = e.emotion_id
+        WHERE l.mem_id = #{memId}
+          AND TRUNC(l.log_time, 'IW') = TRUNC(TO_DATE(#{date}, 'YYYY-MM-DD'), 'IW')
+        GROUP BY e.emotion_name
+        ORDER BY e.emotion_name
+    </select>
+
+    <!-- 11. 특정 월 선택 -->
+    <select id="getMonthlyStatsByDate" resultType="com.maum.my.vo.EmotionLogVO">
+        SELECT e.emotion_name AS emotionName, COUNT(*) AS emotionCount
+        FROM member_emotion_logs l
+        JOIN emotions e ON l.emotion_id = e.emotion_id
+        WHERE l.mem_id = #{memId}
+          AND TRUNC(l.log_time, 'MM') = TRUNC(TO_DATE(#{date}, 'YYYY-MM-DD'), 'MM')
+        GROUP BY e.emotion_name
+        ORDER BY e.emotion_name
+    </select>
+    
+
+</mapper>

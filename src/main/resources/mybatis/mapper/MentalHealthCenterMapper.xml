@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.maum.my.dao.MentalHealthCenterDAO">
+<!-- 전체목록 -->
+<select id="selectAllCenters" resultType="com.maum.my.vo.MentalHealthCenterVO">
+    SELECT center_id AS centerId,
+           sigun_nm AS sigunNm,
+           center_nm AS centerNm,
+           telno,
+           zip_cd AS zipCd,
+           lotno_addr AS lotnoAddr,
+           roadnm_addr AS roadnmAddr,
+           lat,
+           lng
+    FROM mental_health_center
+</select>
+<!-- 검색 -->
+<select id="searchCenters" parameterType="string" resultType="com.maum.my.vo.MentalHealthCenterVO">
+    SELECT center_id AS centerId,
+           sigun_nm AS sigunNm,
+           center_nm AS centerNm,
+           telno,
+           zip_cd AS zipCd,
+           lotno_addr AS lotnoAddr,
+           roadnm_addr AS roadnmAddr,
+           lat,
+           lng
+    FROM mental_health_center
+    WHERE center_nm LIKE '%' || #{keyword} || '%'
+       OR sigun_nm LIKE '%' || #{keyword} || '%'
+       OR roadnm_addr LIKE '%' || #{keyword} || '%'
+</select>
+
+
+</mapper>
+

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "//mybatis.org/DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.maum.my.dao.IDiaryDAO">	
+<!-- 	일기 저장 -->
+     <insert id="saveDiary" parameterType="com.maum.my.vo.DiaryVO">
+       INSERT INTO diary (title, mem_id, c_content, diary_date, created_at)
+   		 VALUES (#{title}, #{memId}, #{cContent}, TO_DATE(#{diaryDate}, 'YYYY-MM-DD'), SYSTIMESTAMP)
+    </insert>
+	<!-- 타이틀 캘린더에 추가 -->
+    <select id="selectDiary" parameterType="String" resultType="com.maum.my.vo.DiaryVO">
+    	SELECT  d_id
+		      , title
+		      , mem_id
+		      , TO_CHAR(diary_date,'YYYY-MM-DD') as diary_date
+		FROM  diary
+		WHERE TO_CHAR(diary_date,'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM') 
+		AND mem_id =#{memId}
+    </select>
+     <select id="selectDiaryById" parameterType="long" resultType="com.maum.my.vo.DiaryVO">
+        SELECT d_id,
+               title,
+               mem_id,
+               TO_CHAR(diary_date,'YYYY-MM-DD') as diaryDate,
+               c_content,
+               TO_CHAR(created_at,'YYYY-MM-DD HH24:MI:SS') as createdAt
+        FROM diary
+        WHERE d_id = #{dId}
+    </select>
+    <!-- 수정 -->
+    <update id="updateDiary" parameterType="com.maum.my.vo.DiaryVO">
+        UPDATE diary
+        SET title = #{title},
+            c_content = #{cContent}
+        WHERE d_id = #{dId}
+          AND mem_id = #{memId}
+    </update>
+	<!--삭제 -->
+    <delete id="deleteDiary" parameterType="com.maum.my.vo.DiaryVO">
+	    DELETE FROM diary
+	    WHERE d_id = #{dId}
+	      AND mem_id = #{memId}
+	</delete>
+</mapper>
