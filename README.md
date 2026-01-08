@@ -13,7 +13,7 @@
 ## 기술 스택
 - Java, Spring Framework
 - JSP, HTML/CSS/JS
-- Oracle Database (예정)
+- Oracle Database 
 
 ## 설치 및 실행
 1. 프로젝트를 클론합니다.
